@@ -13,11 +13,25 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->uuid();
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->boolean('is_verified')->nullable();
             $table->rememberToken();
+
+            // profile
+            $table->string('first_name');
+            $table->string('last_name');
+            $table->string('avatar')->nullable();
+            $table->text('bio')->nullable();
+
+            // status & permissions
+            $table->enum('status', ['active', 'inactive', 'suspended'])->default('active');
+            $table->boolean('is_owner')->default(false);
+
+            $table->timestamp('last_login_at')->nullable();
+            $table->softDeletesDatetime();
             $table->timestamps();
         });
 
@@ -25,6 +39,14 @@ return new class extends Migration
             $table->string('email')->primary();
             $table->string('token');
             $table->timestamp('created_at')->nullable();
+        });
+
+        Schema::create('email_verification_tokens', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained('users', 'id')->cascadeOnDelete();
+            $table->string('token');
+            $table->timestamp('expire_at');
+            $table->timestamps();
         });
 
         Schema::create('sessions', function (Blueprint $table) {
