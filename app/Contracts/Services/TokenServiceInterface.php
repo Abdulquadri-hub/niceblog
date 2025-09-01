@@ -2,7 +2,7 @@
 
 namespace App\Contracts\Services;
 
-use App\Models\User;
+use App\Models\Tenant\User;
 use Illuminate\Http\Request;
 
 interface TokenServiceInterface

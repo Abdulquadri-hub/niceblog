@@ -1,12 +1,13 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Landlord;
 
 use App\Enums\TenantStatuses;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Multitenancy\Models\Tenant as BaseTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Multitenancy\Models\Concerns\UsesLandlordConnection;
 
 class Tenant extends BaseTenant
@@ -14,18 +15,25 @@ class Tenant extends BaseTenant
     use HasFactory, UsesLandlordConnection;
 
     protected $fillable = [
-        "name", "uuid", "subdomain", "domain", "slug",
-        "database_name", "database_host", "plan_type",
-        "subscription_status", "trial_ends_at", "billing_email",
-        "status", "max_users", "max_posts", "max_storage_mb", "setup_error", "setup_step", "setup_completed_at"
+        "name", "uuid", "first_name", "last_name",
+        "email_verified_at", "user_id", "is_verified",
+        "password", "subdomain", "domain", "slug",
+        "database_name", "database_host",
+        "email","status","setup_error", "setup_step", "setup_completed_at","is_verified","last_login_at"
     ];
 
     protected $casts = [
-        'trial_ends_at' => 'datetime',
+        'email_verified_at' => 'datetime',
+        'last_login_at' => 'datetime',
+        'is_verified' => 'boolean',
     ];
 
     protected $attributes = [
         'status' => 'active',
+    ];
+
+    protected $hidden = [
+        'password'
     ];
 
     protected static function boot(){
@@ -64,6 +72,14 @@ class Tenant extends BaseTenant
     public function getDatabaseName(): string
     {
         return $this->database_name;
+    }
+
+    public function subscriptions(): HasMany {
+        return $this->hasMany(TenantSubscription::class);
+    }
+
+    public function transactions(): HasMany {
+        return $this->hasMany(Transaction::class);
     }
 
     public function isActive(): bool {

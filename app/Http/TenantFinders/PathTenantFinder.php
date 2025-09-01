@@ -3,7 +3,7 @@
 namespace App\Http\TenantFinders;
 
 use Illuminate\Http\Request;
-use App\Models\Tenant;
+use App\Models\Landlord\Tenant;
 use Spatie\Multitenancy\TenantFinder\TenantFinder;
 
 class PathTenantFinder extends TenantFinder

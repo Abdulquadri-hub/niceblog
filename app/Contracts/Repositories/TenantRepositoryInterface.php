@@ -2,10 +2,14 @@
 
 namespace App\Contracts\Repositories;
 
-use App\Models\Tenant;
+use App\Models\Landlord\Tenant;
 
 interface TenantRepositoryInterface
 {
+    public function createTenant(array $tenantData): ?Tenant;
+
+    public function fetchTenant(string $column, $criteria): ?Tenant;
+
     public function createDatabase(Tenant $tenant): void;
 
     public function dropDatabase(Tenant $tenant): void;

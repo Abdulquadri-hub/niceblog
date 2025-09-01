@@ -19,7 +19,7 @@ class TenantRequest extends FormRequest
             'name' => 'required|string|unique:tenants,name',
             'first_name' => 'required|string',
             'last_name' => 'required|string',
-            'email' => 'required|email|unique:tenants,billing_email',
+            'email' => 'required|email|unique:tenants,email',
             'password' => 'required|max:8'
         ];
     }

@@ -3,30 +3,28 @@
 namespace App\Services\Landlord;
 
 use Exception;
-use App\Models\User;
-use App\Models\Tenant;
-use Illuminate\Support\Str;
+use App\Models\Landlord\Tenant;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Contracts\Services\TenantServiceInterface;
 use App\Enums\TenantStatuses;
 use App\Jobs\Tenant\SetupTenantJob;
 use App\Repositories\TenantRepository;
-use Illuminate\Database\Eloquent\Collection;
 
 class TenantService implements TenantServiceInterface
 {
+    protected $tenantRepo;
+
+    public function __construct(TenantRepository $tenantRepo)
+    {
+        $this->tenantRepo = $tenantRepo;
+    }
+
     public function create(array $tenantData): ?Tenant
     {
         try {
            $tenant =  DB::connection('landlord')->transaction(function () use ($tenantData) {
-
-                return Tenant::create([
-                    'uuid' => Str::uuid(),
-                    'billing_email' => $tenantData['email'],
-                    'name' => $tenantData['name'],
-                    'status' => TenantStatuses::PENDING->value
-                ]);
+                return $this->tenantRepo->createTenant($tenantData);
             });
 
             if(!$tenant) {
@@ -44,11 +42,16 @@ class TenantService implements TenantServiceInterface
 
     }
 
-    public function delete(Tenant $tenant): bool
+    public function delete($tenantId): bool
     {
         try {
+            $tenant = $this->tenantRepo->fetchTenant('id', $tenantId);
+            if(!$tenant) {
+                throw new Exception("Tenant not found");
+            }
+
             if($tenant->database_name){
-                app(TenantRepository::class)->dropDatabase($tenant);
+                $this->tenantRepo->dropDatabase($tenant);
             }
 
             return $tenant->delete();
@@ -66,25 +69,47 @@ class TenantService implements TenantServiceInterface
         return true;
     }
 
-    public function retrySetup(Tenant $tenant) {
+    public function retrySetup(int $tenantId) {
+
+        $tenant = $this->tenantRepo->fetchTenant('id', $tenantId);
         if(!$tenant->hasFailed()) {
             throw new Exception("can only retry failed tenants");
         }
 
         try {
-            app(TenantRepository::class)->updateStatus($tenant, TenantStatuses::PENDING->value, "Retrying setup");
+            $this->tenantRepo->updateStatus($tenant, TenantStatuses::PENDING->value, "Retrying setup");
 
-            $tenantOwnerData = $tenant->execute(function ($tenant) {
-                return User::where('email', $tenant->email)->first();
-            });
+            $tenantOwnerData = [
+                'email' => $tenant->email,
+                'first_name' => $tenant->first_name,
+                'last_name' => $tenant->last_name,
+                'password' => $tenant->password,
+            ];
 
             SetupTenantJob::dispatch($tenant, $tenantOwnerData);
 
-            return true;
+            $tenant = $this->tenantRepo->fetchTenant('id', $tenantId);
+            return $tenant;
+
         } catch (\Throwable $th) {
             Log::error("Error retrying tenant setup: " . $th->getMessage());
-            return false;
         }
+    }
+
+    public function getTenants($criteria = "all"): ?Tenant
+    {
+        // switch ($criteria) {
+        //     case 'all':
+        //         return Tenant::get();
+        //     case 'active':
+        //         return Tenant::();
+        //     case 'all':
+        //         return Tenant::get();
+        //     default:
+        //         # code...
+        //         break;
+        // }
+        return Tenant::get();
     }
 
     public function getSetupProgress(Tenant $tenant): array {

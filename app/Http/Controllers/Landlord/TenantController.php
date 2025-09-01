@@ -36,4 +36,55 @@ class TenantController extends Controller
             );
         }
     }
+
+    public function drop(int $tenantId) {
+
+        try {
+            if(empty($tenantId)) {
+                return $this->errorResponse(
+                    "Tenant ID is required",
+                    Status::BAD_REQUEST->value
+                );
+            }
+
+            $this->tenantService->delete($tenantId);
+
+            return $this->successResponse(
+                [],
+                "Tenant dropped successfully",
+                Status::OK->value
+            );
+
+        } catch (\Throwable $th) {
+            return $this->errorResponse(
+                $th->getMessage(),
+                Status::UNPROCESSABLE_ENTITY->value
+            );
+        }
+    }
+
+    public function retrySetup(int $tenantId) {
+        try {
+            if(empty($tenantId)) {
+                return $this->errorResponse(
+                    "Tenant ID is required",
+                    Status::BAD_REQUEST->value
+                );
+            }
+
+            $tenant = $this->tenantService->retrySetup($tenantId);
+
+            $this->successResponse(
+                $tenant,
+                "Retrying tenant setup was sucessfull",
+                Status::OK->value
+            );
+
+        }catch (\Throwable $th) {
+            return $this->errorResponse(
+                $th->getMessage(),
+                Status::UNPROCESSABLE_ENTITY->value
+            );
+        }
+    }
 }

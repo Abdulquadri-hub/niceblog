@@ -3,7 +3,7 @@
 namespace App\Services\Auth;
 
 use App\Contracts\Services\TokenServiceInterface;
-use App\Models\User;
+use App\Models\Tenant\User;
 use App\Repositories\TokenRepository;
 use Illuminate\Http\Request;
 

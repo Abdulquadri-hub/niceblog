@@ -5,7 +5,7 @@ namespace App\Repositories;
 use App\Contracts\Repositories\TokenRepositoryInterface;
 use App\Models\EmailVerificationsToken;
 use App\Models\PasswordResetToken;
-use App\Models\User;
+use App\Models\Tenant\User;
 use Illuminate\Support\Facades\DB;
 
 class TokenRepository implements TokenRepositoryInterface

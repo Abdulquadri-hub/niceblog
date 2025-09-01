@@ -15,6 +15,13 @@ return new class extends Migration
             $table->id();
             $table->uuid();
             $table->string('name')->unique();
+            $table->string('password');
+            $table->string('first_name');
+            $table->string('last_name');
+            $table->string('email');
+            $table->bigInteger('user_id')->nullable();
+            $table->timestamp('email_verified_at')->nullable();
+            $table->boolean('is_verified')->default(false);
             $table->string('slug')->unique();
             $table->string('setup_step')->nullable();
             $table->text('setup_error')->nullable();
@@ -23,20 +30,8 @@ return new class extends Migration
             $table->string('domain')->unique()->nullable();
             $table->string('database_name', 100)->unique();
             $table->string('database_host')->default('localhost');
-
-            // subscription  and billing
-            $table->enum('plan_type',['free', 'starter', 'professional', 'enterprise'])->default('free');
-            $table->enum('subscription_status', ['active', 'suspended', 'cancelled', 'trial'])->default('trial');
-            $table->timestamp('trial_ends_at')->nullable();
-            $table->string('billing_email');
-
-            // settings
             $table->string('status')->default('pending');
-            $table->integer('max_users')->default(5);
-            $table->integer('max_posts')->default(100);
-            $table->integer('max_storage_mb')->default(1000);
-
-            $table->softDeletesDatetime()->nullable();
+            $table->timestamp('last_login_at')->nullable();
             $table->timestamps();
         });
 

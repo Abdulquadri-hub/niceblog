@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Tenant;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,8 +16,9 @@ class User extends Authenticatable
 
     protected $fillable = [
         'first_name', 'last_name', 'avatar', 'uuid',
-        'email', 'email_verified_at', 'password','bio', 'is_verified', 'status', 'is_owner',
-        'password', 'last_login_at'
+        'email', 'email_verified_at', 'password','bio',
+        'is_verified', 'status', 'is_owner',
+        'password', 'last_login_at', "remember_token"
     ];
 
 
@@ -25,6 +26,7 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+
 
 
     protected function casts(): array

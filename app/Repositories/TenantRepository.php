@@ -3,17 +3,36 @@
 namespace App\Repositories;
 
 use Exception;
-use App\Models\User;
-use App\Models\Tenant;
+use App\Models\Tenant\User;
+use App\Models\Landlord\Tenant;
 use Illuminate\Support\Str;
 use App\Enums\TenantStatuses;
 use App\Services\Auth\HashService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Artisan;
 use App\Contracts\Repositories\TenantRepositoryInterface;
+use Spatie\Multitenancy\Landlord;
 
 class TenantRepository implements TenantRepositoryInterface
 {
+
+    public function createTenant(array $tenantData): ?Tenant
+    {
+        return Tenant::create([
+            'uuid' => Str::uuid(),
+            'email' => $tenantData['email'],
+            'name' => $tenantData['name'],
+            'first_name' => $tenantData['first_name'],
+            'last_name' => $tenantData['last_name'],
+            'password' => app(HashService::class)->make($tenantData['password']),
+            'status' => TenantStatuses::PENDING->value
+        ]);
+    }
+
+    public function fetchTenant(string $column, $criteria): ?Tenant {
+        return Tenant::where($column, $criteria)->first();
+    }
+
     public function createDatabase(Tenant $tenant): void
     {
         $this->updateStatus($tenant, TenantStatuses::CREATING_DATABASE->value, 'Creating database');
@@ -65,21 +84,27 @@ class TenantRepository implements TenantRepositoryInterface
     {
         $this->updateStatus($tenant, TenantStatuses::CREATING_OWNER->value, 'Creating tenant owner account');
 
-        $tenant->execute(function () use ($tenantOwnerData) {
+        $tenant->execute(function () use ($tenantOwnerData, $tenant) {
 
-            DB::connection('tenant')->transaction(function () use ($tenantOwnerData) {
+            DB::connection('tenant')->transaction(function () use ($tenantOwnerData, $tenant) {
                 $tenantOwner = User::create([
                     'uuid' => Str::uuid(),
                     'email' => $tenantOwnerData['email'],
                     'first_name' => $tenantOwnerData['first_name'],
                     'last_name' => $tenantOwnerData['last_name'],
-                    'password' => app(HashService::class)->make($tenantOwnerData['password']),
+                    'password' => $tenant->password,
                     'is_owner' => true,
                 ]);
 
                 if(!$tenantOwner) {
                     throw new Exception("Error creating tenant owner account");
                 }
+
+                $tenant->execute(function() use ($tenantOwner, $tenant){
+                    $tenant->update([
+                        'user_id' => $tenantOwner->id
+                    ]);
+                });
 
                 $roleExists = DB::connection('tenant')->table('roles')->where('id', 1)->exists();
 
@@ -95,7 +120,6 @@ class TenantRepository implements TenantRepositoryInterface
                     'assigned_at' => now()
                 ]);
             });
-
         });
     }
 

@@ -4,7 +4,7 @@ namespace App\Jobs\Tenant;
 
 use App\Enums\TenantStatuses;
 use Exception;
-use App\Models\Tenant;
+use App\Models\Landlord\Tenant;
 use Illuminate\Support\Facades\Log;
 use App\Repositories\TenantRepository;
 use Illuminate\Queue\SerializesModels;
