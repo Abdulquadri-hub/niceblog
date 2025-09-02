@@ -29,7 +29,6 @@ class TenantSubscriptionService
 
     public function process(array $subscriptionData): array {
         try {
-
             return DB::transaction(function ()  use ($subscriptionData) {
                 $data = [
                     'amount' => $subscriptionData['amount'],
@@ -52,7 +51,7 @@ class TenantSubscriptionService
 
                 $data['gateway'] = $this->switchGateway;
                 $data['processed_at'] = now();
-                
+
                 Transaction::create($data);
 
                return [
