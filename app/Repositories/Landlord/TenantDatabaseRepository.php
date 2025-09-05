@@ -1,41 +1,28 @@
 <?php
 
-namespace App\Repositories;
+namespace App\Repositories\Landlord;
 
-use Exception;
-use App\Models\Tenant\User;
-use App\Models\Landlord\Tenant;
 use Illuminate\Support\Str;
 use App\Enums\TenantStatuses;
-use App\Services\Auth\HashService;
+use App\Models\Landlord\Tenant;
 use Illuminate\Support\Facades\DB;
+use App\Contracts\Repositories\TenantDatabaseRepositoryInterface;
+use App\Models\Tenant\User;
+use Exception;
 use Illuminate\Support\Facades\Artisan;
-use App\Contracts\Repositories\TenantRepositoryInterface;
-use Spatie\Multitenancy\Landlord;
 
-class TenantRepository implements TenantRepositoryInterface
+class TenantDatabaseRepository implements TenantDatabaseRepositoryInterface
 {
+    protected $tenantRepo;
 
-    public function createTenant(array $tenantData): ?Tenant
+    public function __construct(TenantRepository $tenantRepo)
     {
-        return Tenant::create([
-            'uuid' => Str::uuid(),
-            'email' => $tenantData['email'],
-            'name' => $tenantData['name'],
-            'first_name' => $tenantData['first_name'],
-            'last_name' => $tenantData['last_name'],
-            'password' => app(HashService::class)->make($tenantData['password']),
-            'status' => TenantStatuses::PENDING->value
-        ]);
-    }
-
-    public function fetchTenant(string $column, $criteria): ?Tenant {
-        return Tenant::where($column, $criteria)->first();
+        $this->tenantRepo = $tenantRepo;
     }
 
     public function createDatabase(Tenant $tenant): void
     {
-        $this->updateStatus($tenant, TenantStatuses::CREATING_DATABASE->value, 'Creating database');
+        $this->tenantRepo->updateStatus($tenant, TenantStatuses::CREATING_DATABASE->value, 'Creating database');
 
         $landlordConnectionName = config('multitenancy.landlord_database_connection_name');
 
@@ -56,7 +43,7 @@ class TenantRepository implements TenantRepositoryInterface
 
     public function runMigrations(Tenant $tenant): void
     {
-        $this->updateStatus($tenant, TenantStatuses::RUNNING_MIGRATIONS->value, 'Running tenant migrations');
+        $this->tenantRepo->updateStatus($tenant, TenantStatuses::RUNNING_MIGRATIONS->value, 'Running tenant migrations');
 
         $tenant->execute(function () {
             Artisan::call('migrate', [
@@ -69,7 +56,7 @@ class TenantRepository implements TenantRepositoryInterface
 
     public function seedDefaultData(Tenant $tenant): void
     {
-        $this->updateStatus($tenant, TenantStatuses::SEEDING_DATA->value, 'Seeding default data');
+        $this->tenantRepo->updateStatus($tenant, TenantStatuses::SEEDING_DATA->value, 'Seeding default data');
 
         $tenant->execute(function () {
             Artisan::call('db:seed', [
@@ -82,7 +69,7 @@ class TenantRepository implements TenantRepositoryInterface
 
     public function createTenantOwner(Tenant $tenant, array $tenantOwnerData): void
     {
-        $this->updateStatus($tenant, TenantStatuses::CREATING_OWNER->value, 'Creating tenant owner account');
+        $this->tenantRepo->updateStatus($tenant, TenantStatuses::CREATING_OWNER->value, 'Creating tenant owner account');
 
         $tenant->execute(function () use ($tenantOwnerData, $tenant) {
 
@@ -125,23 +112,6 @@ class TenantRepository implements TenantRepositoryInterface
 
     public function markTenantAsActive(Tenant $tenant): void
     {
-        $this->updateStatus($tenant, TenantStatuses::ACTIVE->value, 'Tenant setup completed');
+        $this->tenantRepo->updateStatus($tenant, TenantStatuses::ACTIVE->value, 'Tenant setup completed');
     }
-
-    public function updateStatus(Tenant $tenant, ?string $status, ?string $step = null, ?string $error = null): void {
-        $tenant->update([
-            'status' => $status,
-            'setup_step' => $step,
-            'setup_error' => $error,
-            'setup_completed_at' => $status === TenantStatuses::ACTIVE->value ? now() : null
-        ]);
-    }
-
-    // public function deleteTenantOwner(Tenant $tenant) {
-    //     return $tenant->delete();
-    // }
-
-    // public function updateTenantOwner(Tenant $tenant,array $tenantOwnerData) {
-    //     return $tenant->update();
-    // }
 }

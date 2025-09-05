@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Jobs\Tenant;
+namespace App\Jobs\Landlord;
 
-use App\Enums\TenantStatuses;
 use Exception;
+use App\Enums\TenantStatuses;
 use App\Models\Landlord\Tenant;
 use Illuminate\Support\Facades\Log;
 use App\Repositories\TenantRepository;
@@ -13,6 +13,7 @@ use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
+use App\Repositories\Landlord\TenantDatabaseRepository;
 
 class SetupTenantJob implements ShouldQueue, ShouldBeUnique
 {
@@ -41,15 +42,15 @@ class SetupTenantJob implements ShouldQueue, ShouldBeUnique
         try {
             Log::info("Starting tenant setup for: {$this->tenant->name} (ID: {$this->tenant->id})");
 
-            app(TenantRepository::class)->createDatabase($this->tenant);
+            app(TenantDatabaseRepository::class)->createDatabase($this->tenant);
 
-            app(TenantRepository::class)->runMigrations($this->tenant);
+            app(TenantDatabaseRepository::class)->runMigrations($this->tenant);
 
-            app(TenantRepository::class)->seedDefaultData($this->tenant);
+            app(TenantDatabaseRepository::class)->seedDefaultData($this->tenant);
 
-            app(TenantRepository::class)->createTenantOwner($this->tenant, $this->tenantOwnerData);
+            app(TenantDatabaseRepository::class)->createTenantOwner($this->tenant, $this->tenantOwnerData);
 
-            app(TenantRepository::class)->markTenantAsActive($this->tenant);
+            app(TenantDatabaseRepository::class)->markTenantAsActive($this->tenant);
 
             Log::info("Tenant setup completed successfully for {$this->tenant->name} (ID: {$this->tenant->id})");
 
@@ -77,7 +78,7 @@ class SetupTenantJob implements ShouldQueue, ShouldBeUnique
 
         try {
             if ($this->tenant->database_name) {
-                app(TenantRepository::class)->dropDatabase($this->tenant);
+                app(TenantDatabaseRepository::class)->dropDatabase($this->tenant);
                 Log::info("Cleaned up database for failed tenant: {$this->tenant->id}");
             }
         } catch (\Throwable $cleanupException) {

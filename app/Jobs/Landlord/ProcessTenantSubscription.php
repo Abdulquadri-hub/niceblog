@@ -3,7 +3,6 @@
 namespace App\Jobs\Landlord;
 
 use App\GateWays\Paystack;
-use App\Models\Landlord\Tenant;
 use App\Repositories\Landlord\TransactionRepository;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;

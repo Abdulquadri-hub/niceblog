@@ -8,17 +8,17 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Contracts\Services\TenantServiceInterface;
 use App\Enums\TenantStatuses;
-use App\Jobs\Tenant\SetupTenantJob;
-use App\Repositories\TenantRepository;
+use App\Jobs\Landlord\SetupTenantJob;
+use App\Repositories\Landlord\TenantDatabaseRepository;
+use App\Repositories\Landlord\TenantRepository;
 
 class TenantService implements TenantServiceInterface
 {
-    protected $tenantRepo;
 
-    public function __construct(TenantRepository $tenantRepo)
-    {
-        $this->tenantRepo = $tenantRepo;
-    }
+    public function __construct(
+        protected TenantRepository $tenantRepo,
+        protected  TenantDatabaseRepository $tenantDatabase
+    ){}
 
     public function create(array $tenantData): ?Tenant
     {
@@ -51,7 +51,7 @@ class TenantService implements TenantServiceInterface
             }
 
             if($tenant->database_name){
-                $this->tenantRepo->dropDatabase($tenant);
+                $this->tenantDatabase->dropDatabase($tenant);
             }
 
             return $tenant->delete();
@@ -98,17 +98,6 @@ class TenantService implements TenantServiceInterface
 
     public function getTenants($criteria = "all"): ?Tenant
     {
-        // switch ($criteria) {
-        //     case 'all':
-        //         return Tenant::get();
-        //     case 'active':
-        //         return Tenant::();
-        //     case 'all':
-        //         return Tenant::get();
-        //     default:
-        //         # code...
-        //         break;
-        // }
         return Tenant::get();
     }
 
