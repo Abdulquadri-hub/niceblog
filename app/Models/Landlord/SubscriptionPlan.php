@@ -20,6 +20,10 @@ class SubscriptionPlan extends Model
     ];
 
     public function subscriptions(): HasMany {
-        return $this->hasMany(TenantSubscription::class);
+        return $this->hasMany(TenantSubscription::class, 'plan_id');
+    }
+
+    public function scopeActive(){
+        return $this->where('is_active', true);
     }
 }

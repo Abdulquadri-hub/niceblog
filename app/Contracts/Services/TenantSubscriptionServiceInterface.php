@@ -2,11 +2,12 @@
 
 namespace App\Contracts\Services;
 
-interface TenantSubscriptionServiceInterface
+use App\Models\Landlord\Tenant;
+
+interface TenantSubscriptionInterface
 {
     public function subscribe(array $subscriptionData): array;
-
-    public function upgrade(string $subscriptionReference): array;
-
-    public function handleWebhook(array $payload, string $signature);
+    public function cancel(Tenant $tenant): bool;
+    public function upgrade(int $tenantId, array $subscriptionData): array;
+    public function verify(array $payload, string $signature);
 }
